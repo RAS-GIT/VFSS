@@ -1,0 +1,77 @@
+shader_type canvas_item;
+
+uniform vec2 light_normal = vec2(-2.85, 2.77);
+uniform vec2 light_position = vec2(0.0);
+uniform float light_size = 1.0;
+uniform float sphere_rad = 0.5;
+
+group_uniforms spheres;
+uniform vec2 sphere_1_pos = vec2(0.61);
+uniform float sphere_1_rad = 14.84;
+
+uniform vec2 sphere_2_pos = vec2(0.55, 0.355);
+uniform float sphere_2_rad = 18.925;
+
+group_uniforms scene;
+uniform float scene_scale = 176.56;
+uniform float test_scaler = 0.32;
+
+
+void fragment() {
+	vec2 light_dir = UV*scene_scale-light_position;
+	vec2 light_dir_normalized = normalize(light_dir);
+	vec2 light_normal_normalized = normalize(light_normal);
+	float light_angle_size = 2.0 * atan(light_size / length(light_dir));
+	
+	// vector field generation
+	vec2 sphere_1_dir = (UV - sphere_1_pos)*scene_scale;
+	float sphere_1_d_len = length(sphere_1_dir);
+	float sphere_1_len = clamp(sphere_1_d_len - sphere_1_rad, 0.0, 1000000.0);
+	float sphere_1_angle_size = 2.0 * atan(sphere_1_rad / sphere_1_d_len);
+	
+	vec2 sphere_2_dir = (UV - sphere_2_pos)*scene_scale;
+	float sphere_2_d_len = length(sphere_2_dir);
+	float sphere_2_len = clamp(sphere_2_d_len - sphere_2_rad, 0.0, 1000000.0);
+	float sphere_2_angle_size = 2.0 * atan(sphere_2_rad / sphere_2_d_len);
+	
+	//vec2 dir_norm = normalize(dir);
+	
+	// stabilized parametric computing for physical shadow
+	//float shadow = (dot(light_normal_normalized, dir_norm))*light_size;
+	//shadow += (dot(light_normal_normalized, dir_norm)*test_scaler*10.0)/(len);
+	
+	// test
+	float shadow_1 = (dot(light_normal_normalized, normalize(sphere_1_dir)))*light_size;
+	shadow_1 += (dot(light_normal_normalized, normalize(sphere_1_dir))*test_scaler*10.0)/(sphere_1_len);
+	
+	float shadow_2 = (dot(light_normal_normalized, normalize(sphere_2_dir)))*light_size;
+	shadow_2 += (dot(light_normal_normalized, normalize(sphere_2_dir))*test_scaler*10.0)/(sphere_2_len);
+	
+	float aad = 0.0;
+	shadow_1 = clamp(shadow_1, 0.0 + aad, 1.0 + aad)-aad;
+	shadow_2 = clamp(shadow_2, 0.0 + aad, 1.0 + aad)-aad;
+	
+	// in future, this mixing method, will be deprecated for better way : global vector field
+	// for correct mixing many vector fields, add "occlusion" parameter to global vector field
+	// in this sample of code (occ_sphere_1 = sphere_2_angle_size) - correct way for computing occlusion
+	// occlusion always behind dir vector of global vector field
+	// This will allow to compute the shadowing in the global vector field for different non connected objects
+	float shadow = max(shadow_1, shadow_2);
+	
+	if (sphere_1_len < 0.7) {
+		shadow = 1.0;
+	}
+	if (sphere_2_len < 0.7) {
+		shadow = 1.0;
+	}
+	// test
+	
+	COLOR.rgb = vec3(1.0 - shadow);
+}
+
+// [Vector Field Soft Shadows (1 reading in lut)] - (VFSS)
+// Analytical solution for arbitrary shape light integration
+// Author: [RAS-GIT]
+// Created: April 2026
+// Initial public release for prior art documentation
+// Licensed under MIT
