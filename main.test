@@ -71,7 +71,7 @@ void fragment() {
 
 // [Vector Field Soft Shadows (1 reading in lut)] - (VFSS)
 // Analytical solution for arbitrary shape light integration
-// Author: [RAS-GIT]
+// Author: [RAS-GIT (Fedorenko Vasilii Andreevych)]
 // Created: April 2026
 // Initial public release for prior art documentation
 // Licensed under MIT
